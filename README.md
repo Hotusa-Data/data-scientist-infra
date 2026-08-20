@@ -1,4 +1,4 @@
-# PRUEBA TÉCNICA — DATA SCIENTIST / DATA INFRASTRUCTURE
+# Prueba técnica — Data Scientist / Data Infrastructure
 
 ## Contenido
 
@@ -9,27 +9,25 @@ La prueba contiene los siguientes directorios:
 
 ## Inicio rápido
 
-1. En una terminal, ejecutar:
+1. Ejecutar la API local en una terminal:
 
 ```bash
 python 02_MOCK_API/run_mock_api.py
 ```
 
-2. Comprobar que la API está disponible accediendo a:
+2. Comprobar que está disponible:
 
 ```text
 http://127.0.0.1:8000/health
 ```
 
-3. Desarrollar la solución en una carpeta nueva llamada:
+3. Desarrollar la solución en una carpeta nueva:
 
 ```text
 solution/
 ```
 
-Se permite utilizar **Internet, documentación y herramientas de IA** durante la realización de la prueba.
-
-La solución entregada debe poder reproducirse en local **sin credenciales ni servicios de pago**.
+La solución entregada debe poder reproducirse en local **sin credenciales ni servicios externos de pago**.
 
 ## Volumen aproximado
 
@@ -40,18 +38,11 @@ La solución entregada debe poder reproducirse en local **sin credenciales ni se
 
 ---
 
-## 1. Contexto
+# 1. Contexto
 
 El equipo de Data recibe diariamente información de reservas desde distintos sistemas hoteleros.
 
-Los ficheros pueden contener:
-
-* Duplicados.
-* Correcciones tardías.
-* Registros inválidos.
-* Importes expresados en distintas monedas.
-
-Los importes deben convertirse a euros consultando un servicio interno de tipos de cambio.
+Los ficheros pueden contener duplicados, correcciones tardías, registros inválidos e importes expresados en distintas monedas. Estos últimos deben convertirse a euros mediante un servicio interno de tipos de cambio.
 
 El objetivo es construir un proceso **local, reproducible e idempotente** que:
 
@@ -62,7 +53,7 @@ El objetivo es construir un proceso **local, reproducible e idempotente** que:
 
 ---
 
-## 2. Material entregado
+# 2. Material entregado
 
 | Recurso                                | Descripción                                                |
 | -------------------------------------- | ---------------------------------------------------------- |
@@ -74,7 +65,7 @@ El objetivo es construir un proceso **local, reproducible e idempotente** que:
 
 ---
 
-## 3. Puesta en marcha de la API local
+# 3. Puesta en marcha de la API local
 
 Ejecuta la API en una terminal independiente:
 
@@ -82,7 +73,7 @@ Ejecuta la API en una terminal independiente:
 python 02_MOCK_API/run_mock_api.py
 ```
 
-### Endpoints disponibles
+## Endpoints disponibles
 
 ```http
 GET /health
@@ -94,28 +85,25 @@ GET /exchange-rates?date=YYYY-MM-DD
 
 La API simula un **fallo temporal la primera vez que se consulta cada fecha**.
 
-La solución debe:
-
-* Manejar este comportamiento mediante reintentos.
-* Registrar claramente los fallos producidos durante las consultas.
+La solución deberá gestionar este comportamiento mediante reintentos y registrar los errores producidos durante las consultas.
 
 ---
 
-## 4. Requisitos funcionales
+# 4. Requisitos funcionales
 
-### 4.1. Ingesta incremental
+## 4.1. Ingesta incremental
 
 La solución debe:
 
 * Leer todos los ficheros `reservations_*.csv` de la carpeta de entrada.
-* Conservar una trazabilidad mínima que incluya:
+* Mantener trazabilidad mínima mediante:
 
   * Fichero de origen.
   * Fecha/hora de ingesta.
-  * Número o identificador de ejecución.
+  * Identificador de ejecución.
 * Evitar que una segunda ejecución duplique datos o métricas.
 * Detectar registros exactamente duplicados.
-* Procesar correctamente las correcciones tardías.
+* Procesar correctamente correcciones tardías.
 
 Para cada combinación:
 
@@ -125,51 +113,42 @@ hotel_id + reservation_id + stay_date
 
 debe prevalecer el **registro válido con el `modified_at` más reciente**.
 
-El dataset puede contener empates de `modified_at` con valores distintos. No se prescribe una única forma de resolver estos conflictos, pero la solución adoptada debe ser:
+El dataset puede contener empates de `modified_at` con valores diferentes. No se prescribe una única resolución, pero el criterio elegido deberá ser:
 
 * Determinista.
 * Trazable.
-* Documentada.
+* Documentado.
 
 Un registro antiguo **nunca debe sobrescribir un estado más reciente**, aunque llegue en un fichero procesado posteriormente.
 
 ---
 
-### 4.2. Validación y normalización
+## 4.2. Validación y normalización
 
-Como mínimo, deben aplicarse las siguientes reglas de calidad.
+Como mínimo, deben aplicarse las siguientes reglas.
 
-#### Campos obligatorios
+### Campos obligatorios
 
-Los siguientes campos no pueden estar vacíos:
+No pueden estar vacíos:
 
 * `hotel_id`
 * `reservation_id`
 * `stay_date`
 
-#### Hoteles
+### Hoteles
 
-* El `hotel_id` debe existir en el maestro de hoteles.
-* El hotel debe estar marcado como activo.
+* El `hotel_id` debe existir en el maestro.
+* El hotel debe estar activo.
 
-#### Fechas y timestamps
+### Fechas y timestamps
 
-* `stay_date` debe tener formato ISO:
+* `stay_date` debe tener formato ISO `YYYY-MM-DD`.
+* `created_at` y `modified_at` deben ser timestamps válidos.
+* Los timestamps de entrada están expresados en la zona horaria del hotel y deben almacenarse normalizados a **UTC**.
 
-```text
-YYYY-MM-DD
-```
+### Estado
 
-* `created_at` debe ser un timestamp válido.
-* `modified_at` debe ser un timestamp válido.
-
-Los timestamps de entrada están expresados en la **zona horaria del hotel**.
-
-La solución debe almacenarlos normalizados a **UTC**.
-
-#### Estado de la reserva
-
-`status` únicamente puede tomar uno de los siguientes valores:
+`status` solo puede tomar uno de estos valores:
 
 ```text
 CONFIRMED
@@ -178,33 +157,26 @@ CHECKED_IN
 CHECKED_OUT
 ```
 
-#### Habitaciones e ingresos
+### Habitaciones e ingresos
 
 * `rooms` no puede ser negativo.
 * `room_revenue` no puede ser negativo.
-
-Una reserva con:
-
-```text
-status = CANCELLED
-```
-
-debe cumplir:
+* Una reserva `CANCELLED` debe tener:
 
 ```text
 rooms = 0
 room_revenue = 0
 ```
 
-#### Monedas
+### Monedas
 
-Solo se admiten monedas disponibles en la API de tipos de cambio para la fecha correspondiente a `stay_date`.
+Solo se admiten monedas disponibles en la API para la fecha indicada en `stay_date`.
 
-### Gestión de registros inválidos
+### Registros inválidos
 
-Los registros inválidos **no deben detener el procesamiento completo del lote**.
+Los registros inválidos **no deben detener el lote completo**.
 
-Deben almacenarse en una tabla o fichero de cuarentena que incluya, como mínimo:
+Deben almacenarse en una tabla o fichero de cuarentena incluyendo, como mínimo:
 
 * Registro original.
 * Motivo del rechazo.
@@ -213,77 +185,51 @@ Deben almacenarse en una tabla o fichero de cuarentena que incluya, como mínimo
 
 ### Calidad de los maestros
 
-Los maestros también pueden contener:
+Los maestros pueden contener duplicados, combinaciones sin inventario u otras inconsistencias puntuales.
 
-* Duplicados.
-* Combinaciones sin inventario.
-* Inconsistencias puntuales.
-
-La solución debe evitar que estos problemas:
-
-* Dupliquen métricas.
-* Falseen los resultados.
-
-El criterio utilizado para tratar estas situaciones debe quedar documentado.
+La solución deberá impedir que estas incidencias dupliquen o falseen las métricas y documentar el criterio utilizado para tratarlas.
 
 ---
 
-### 4.3. Conversión de moneda
+## 4.3. Conversión de moneda
 
-La conversión de ingresos debe realizarse consultando la API local mediante `stay_date`.
-
-El campo:
-
-```text
-room_revenue
-```
-
-debe convertirse a euros utilizando:
+`room_revenue` debe convertirse a euros utilizando los tipos contenidos en:
 
 ```text
 rates_to_eur
 ```
 
-La implementación debe cumplir los siguientes requisitos:
+La API deberá consultarse utilizando `stay_date`.
 
-* Implementar **al menos dos reintentos** ante errores temporales `5xx`.
-* Evitar llamadas repetidas a la API para una misma fecha dentro de una ejecución.
-* Utilizar para ello una caché:
+La implementación debe:
 
-  * En memoria, o
-  * Persistente.
-* Si no se puede recuperar un tipo de cambio necesario, el comportamiento debe ser:
+* Realizar **al menos dos reintentos** ante errores temporales `5xx`.
+* Evitar llamadas repetidas para una misma fecha dentro de una ejecución mediante caché en memoria o persistente.
+* Registrar de forma explícita cualquier tipo de cambio que no pueda recuperarse.
+* Evitar comportamientos silenciosos ante errores de conversión.
 
-  * Explícito.
-  * Trazable.
-  * No silencioso.
+---
 
 ## 4.4. Persistencia en SQLite
 
 La solución debe utilizar **SQLite** como sistema de persistencia.
 
-La base de datos debe permitir consultar, como mínimo:
+La base de datos deberá permitir consultar, como mínimo:
 
 * Registros ingeridos o su trazabilidad equivalente.
 * Último estado válido de cada reserva.
-* Registros rechazados y motivo del rechazo.
-* Histórico de ejecuciones, incluyendo:
-
-  * Estado.
-  * Tiempos.
-  * Contadores principales.
+* Registros rechazados y motivo.
+* Histórico de ejecuciones con estado, tiempos y contadores.
 * Métricas diarias por hotel.
 
-El modelo de datos exacto queda a criterio del candidato.
+El modelo exacto queda a criterio del candidato.
 
-Se valorarán especialmente:
+Se valorará especialmente:
 
-* Uso adecuado de claves.
-* Restricciones de integridad.
+* Uso adecuado de claves y restricciones.
 * Índices.
-* Separación de responsabilidades entre tablas.
-* Facilidad de mantenimiento.
-* Claridad del modelo.
+* Separación de responsabilidades.
+* Claridad y facilidad de mantenimiento.
 
 ---
 
@@ -301,23 +247,18 @@ y un fichero equivalente:
 daily_hotel_metrics.csv
 ```
 
-El resultado debe estar ordenado por:
+El resultado debe estar ordenado por `stay_date` y `hotel_id`.
 
-1. `stay_date`
-2. `hotel_id`
-
-La tabla debe contener las siguientes columnas:
-
-| Columna                  | Definición                                                                         |
-| ------------------------ | ---------------------------------------------------------------------------------- |
-| `stay_date`              | Fecha de estancia.                                                                 |
-| `hotel_id`               | Identificador del hotel.                                                           |
-| `active_reservations`    | Número de reservas distintas con estado `CONFIRMED`, `CHECKED_IN` o `CHECKED_OUT`. |
-| `cancelled_reservations` | Número de reservas distintas con estado `CANCELLED`.                               |
-| `active_rooms`           | Suma de `rooms` de las reservas activas.                                           |
-| `available_rooms`        | Habitaciones disponibles según el maestro de inventario.                           |
-| `occupancy_pct`          | `active_rooms / available_rooms × 100`.                                            |
-| `revenue_eur`            | Suma de `room_revenue` convertido a EUR para las reservas activas.                 |
+| Columna                  | Definición                                                               |
+| ------------------------ | ------------------------------------------------------------------------ |
+| `stay_date`              | Fecha de estancia.                                                       |
+| `hotel_id`               | Identificador del hotel.                                                 |
+| `active_reservations`    | Reservas distintas con estado `CONFIRMED`, `CHECKED_IN` o `CHECKED_OUT`. |
+| `cancelled_reservations` | Reservas distintas con estado `CANCELLED`.                               |
+| `active_rooms`           | Suma de `rooms` de las reservas activas.                                 |
+| `available_rooms`        | Habitaciones disponibles según el maestro de inventario.                 |
+| `occupancy_pct`          | `active_rooms / available_rooms × 100`.                                  |
+| `revenue_eur`            | Suma de `room_revenue` convertido a EUR para las reservas activas.       |
 
 Se consideran reservas activas aquellas cuyo estado sea:
 
@@ -327,31 +268,27 @@ CHECKED_IN
 CHECKED_OUT
 ```
 
-Si no existe inventario para una combinación `hotel_id + stay_date`, **no debe inventarse un valor**.
-
-El candidato deberá decidir cómo representar esta situación y documentar el criterio aplicado.
+Si no existe inventario para una combinación `hotel_id + stay_date`, **no debe inventarse un valor**. El criterio elegido para representar esta situación deberá quedar documentado.
 
 ---
 
 ## 4.6. Ejecución y observabilidad
 
-La solución debe poder ejecutarse mediante **un único comando**, claramente documentado en el README.
+La solución debe poder ejecutarse mediante **un único comando**, claramente documentado.
 
-Los siguientes parámetros deben ser configurables y no estar repartidos o hardcodeados por el código:
+Los principales parámetros deben ser configurables y evitar valores hardcodeados repartidos por el código. Como mínimo:
 
 * Paths de entrada y salida.
 * URL de la API.
 * Ruta de la base de datos SQLite.
-* Otros parámetros relevantes de ejecución.
 
-La solución debe generar logs legibles que permitan identificar:
+La ejecución debe generar logs legibles que incluyan:
 
-* Inicio de la ejecución.
-* Fin de la ejecución.
-* Errores.
-* Principales contadores del proceso.
+* Inicio y fin del proceso.
+* Errores relevantes.
+* Principales contadores.
 
-Como mínimo, deben registrarse los siguientes contadores:
+Como mínimo:
 
 * Filas leídas.
 * Filas válidas.
@@ -361,145 +298,126 @@ Como mínimo, deben registrarse los siguientes contadores:
 * Filas actualizadas.
 * Métricas generadas.
 
-Cuando se produzca un error no recuperable, el proceso debe finalizar con un **código de salida distinto de cero**.
+Ante un error no recuperable, el proceso debe finalizar con un **código de salida distinto de cero**.
 
 ---
 
 ## 4.7. Pruebas
 
-La solución debe incluir **al menos cuatro pruebas automatizadas**.
-
-Las pruebas deben cubrir varios de los siguientes escenarios:
+La solución debe incluir **al menos cuatro pruebas automatizadas** que cubran varios de los siguientes escenarios:
 
 * Validación de registros inválidos.
 * Eliminación de duplicados exactos.
-* Prevalencia de la corrección con el `modified_at` más reciente.
-* Protección frente a una actualización que llega más tarde, pero cuyo `modified_at` es más antiguo.
+* Prevalencia del registro con `modified_at` más reciente.
+* Protección frente a una actualización que llega posteriormente pero contiene un `modified_at` más antiguo.
 * Idempotencia de una segunda ejecución.
 * Reintento de la API ante un error temporal.
 * Cálculo correcto de una métrica diaria.
 
-El comando necesario para ejecutar las pruebas debe quedar documentado en el README.
+El comando para ejecutar las pruebas deberá quedar documentado.
 
 ---
 
 # 5. Pregunta de diseño
 
-Incluye un documento de **máximo una página** explicando cómo evolucionarías esta solución local hacia un entorno productivo.
+Incluye un documento de **máximo una página** explicando cómo evolucionarías esta solución local hacia producción.
 
-Debes elegir una de estas alternativas:
+Elige una de estas alternativas:
 
 * **AWS**
 * **Microsoft Fabric / Azure**
 
-La propuesta debe cubrir, como mínimo, los siguientes aspectos:
+La propuesta deberá cubrir:
 
 * Componentes principales y flujo de datos.
-* Orquestación y planificación de los procesos.
-* Almacenamiento de datos:
-
-  * Raw.
-  * Curados.
-  * Métricas.
+* Orquestación y planificación.
+* Almacenamiento de datos raw, curados y métricas.
 * Gestión de secretos y permisos.
 * Monitorización, alertas, logs y reintentos.
 * Despliegue, control de versiones y CI/CD.
-* Estrategia para soportar un aumento significativo del volumen.
-* Cómo evolucionarías la solución ante una posible necesidad de procesamiento **near real time**.
+* Estrategia ante un aumento significativo del volumen.
+* Evolución hacia un posible escenario **near real time**.
 
-No es necesario desarrollar la arquitectura. Se evaluará principalmente la capacidad para justificar las decisiones propuestas.
+No es necesario desarrollar una arquitectura exhaustiva. Se evaluará principalmente el criterio aplicado y la capacidad para justificar las decisiones.
 
 ---
 
 # 6. Entregables
 
-La entrega debe incluir:
+La entrega deberá incluir:
 
 1. **Código fuente** de la solución.
 2. **README** con:
 
-   * Requisitos.
-   * Instalación.
+   * Requisitos e instalación.
    * Comando de ejecución.
    * Estructura del proyecto.
-   * Decisiones principales.
+   * Principales decisiones técnicas.
    * Limitaciones conocidas.
    * Tiempo aproximado empleado.
+   * Qué mejorarías con algunas horas adicionales.
 3. **Base de datos SQLite** generada o instrucciones para crearla.
-4. Fichero:
-
-   ```text
-   daily_hotel_metrics.csv
-   ```
+4. **`daily_hotel_metrics.csv`**.
 5. **Pruebas automatizadas** y comando para ejecutarlas.
 6. **Documento breve de diseño de producción**.
-7. **Fichero reproducible de dependencias**, por ejemplo:
+7. **Fichero reproducible de dependencias**, como `requirements.txt`, `pyproject.toml` o equivalente.
+8. **Breve declaración sobre el uso de herramientas de IA**, si aplica.
 
-   * `requirements.txt`
-   * `pyproject.toml`
-   * O equivalente.
-8. **Declaración breve del uso de herramientas de IA**, si aplica.
+El archivo `.zip` con la solución deberá enviarse a:
+
+**[alejandra.comesana@eurostarshotelcompany.com](mailto:alejandra.comesana@eurostarshotelcompany.com)**
 
 ---
 
 # 7. Condiciones de realización
 
-Se permite utilizar:
+Se permite utilizar Internet, documentación técnica y herramientas de inteligencia artificial como apoyo.
 
-* Internet.
-* Documentación técnica.
-* Asistentes de inteligencia artificial.
+El candidato es responsable de **revisar, entender y probar todo el código entregado** y deberá ser capaz de explicar y modificar su solución durante la entrevista.
 
-El uso de estas herramientas **no se puntuará por sí mismo**.
+No es necesario compartir conversaciones ni prompts. Si se han utilizado herramientas de IA, bastará con indicar brevemente qué herramientas se utilizaron y para qué.
 
-Se evaluarán:
+Además:
 
-* El resultado entregado.
-* El criterio aplicado.
-* La capacidad para explicar y defender la solución.
-
-Además, deben cumplirse las siguientes condiciones:
-
-* Debes revisar, entender y probar todo el código entregado.
-* No es necesario compartir conversaciones ni prompts utilizados.
-* Si se han utilizado herramientas de IA, basta con indicar brevemente cuáles y para qué se utilizaron.
-* La solución debe poder ejecutarse en local sin credenciales ni servicios externos de pago.
-* Las dependencias pueden descargarse de Internet, pero deben quedar declaradas de forma reproducible.
+* La solución debe ejecutarse en local sin credenciales ni servicios externos de pago.
+* Las dependencias pueden instalarse desde Internet, pero deben declararse de forma reproducible.
 * No se permite modificar manualmente los ficheros de entrada para corregir incidencias.
 * No se permite hardcodear el resultado esperado.
 * No es necesario desarrollar una interfaz gráfica.
-* No se exige una solución perfecta: se priorizará que sea **ejecutable, clara, mantenible y justificable**.
 
 ---
 
-# 8. Qué se valorará
+# 8. Presentación de la solución
 
-Se valorarán especialmente los siguientes aspectos:
+El candidato presentará la solución al equipo de Data durante aproximadamente **20 minutos**.
 
-* Corrección funcional y consistencia de los resultados.
-* Idempotencia.
-* Robustez.
-* Tratamiento de errores.
-* Calidad del modelo de datos.
-* Trazabilidad.
-* Uso adecuado de Python y SQL.
-* Estructura y modularidad del código.
-* Calidad de las pruebas.
-* Calidad de la documentación.
-* Capacidad para explicar y defender las decisiones tomadas.
-* Uso responsable y transparente de:
+La presentación deberá permitir entender:
 
-  * Documentación.
-  * Internet.
-  * Herramientas de inteligencia artificial.
+* Cómo ha interpretado el problema.
+* Cómo ha estructurado la solución.
+* Las principales decisiones tomadas y su justificación.
+* Cómo se garantiza la calidad, idempotencia y trazabilidad.
+* Los problemas detectados en los datos.
+* Las conclusiones o resultados más relevantes.
+* Qué información adicional solicitaría.
+* Qué mejoraría antes de llevar la solución a producción.
+
+Durante la entrevista podrán solicitarse **pequeños cambios en directo** sobre la solución.
 
 ---
 
-## Nota final
+# 9. Qué se valorará
 
-Indica también: 
+Se valorarán especialmente:
 
-* **Tiempo aproximado empleado** en la realización de la prueba.
-* **Qué mejorarías si dispusieras de dos horas adicionales**.
-* **Qué herramientas de IA utilizaste y para qué**, si aplica.
+1. **Corrección funcional y consistencia de los resultados.**
+2. **Idempotencia, robustez y tratamiento de errores.**
+3. **Calidad del modelo de datos y trazabilidad.**
+4. **Uso adecuado de Python y SQL.**
+5. **Estructura, modularidad y mantenibilidad.**
+6. **Calidad de las pruebas y documentación.**
+7. **Comprensión del problema y capacidad para justificar las decisiones.**
 
+No se espera una solución completamente preparada para producción.
+
+En caso de no completar algún apartado, el candidato podrá explicar cómo lo habría abordado.
