@@ -4,26 +4,24 @@
 
 La prueba contiene los siguientes directorios:
 
-* `00_ENUNCIADO`: documento con el caso y los requisitos.
 * `01_DATOS`: maestros, inventario e inputs diarios.
 * `02_MOCK_API`: API local de tipos de cambio.
 
 ## Inicio rápido
 
-1. Abrir el documento de enunciado.
-2. En una terminal, ejecutar:
+1. En una terminal, ejecutar:
 
 ```bash
 python 02_MOCK_API/run_mock_api.py
 ```
 
-3. Comprobar que la API está disponible accediendo a:
+2. Comprobar que la API está disponible accediendo a:
 
 ```text
 http://127.0.0.1:8000/health
 ```
 
-4. Desarrollar la solución en una carpeta nueva llamada:
+3. Desarrollar la solución en una carpeta nueva llamada:
 
 ```text
 solution/
