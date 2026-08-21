@@ -257,7 +257,7 @@ El resultado debe estar ordenado por `stay_date` y `hotel_id`.
 | `cancelled_reservations` | Reservas distintas con estado `CANCELLED`.                               |
 | `active_rooms`           | Suma de `rooms` de las reservas activas.                                 |
 | `available_rooms`        | Habitaciones disponibles según el maestro de inventario.                 |
-| `occupancy_pct`          | `active_rooms / available_rooms × 100`.                                  |
+| `occupancy_pct`          | `100 x active_rooms / available_rooms`.                                  |
 | `revenue_eur`            | Suma de `room_revenue` convertido a EUR para las reservas activas.       |
 
 Se consideran reservas activas aquellas cuyo estado sea:
