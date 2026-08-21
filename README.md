@@ -363,9 +363,7 @@ La entrega deberá incluir:
 7. **Fichero reproducible de dependencias**, como `requirements.txt`, `pyproject.toml` o equivalente.
 8. **Breve declaración sobre el uso de herramientas de IA**, si aplica.
 
-El archivo `.zip` con la solución deberá enviarse a:
-
-**[alejandra.comesana@eurostarshotelcompany.com](mailto:alejandra.comesana@eurostarshotelcompany.com)**
+El archivo `.zip` con la solución deberá enviarse a: **[alejandra.comesana@eurostarshotelcompany.com](mailto:alejandra.comesana@eurostarshotelcompany.com)**
 
 ---
 
